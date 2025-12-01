@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ playlist.name }} – Playlist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+
+:root {
+    --accent: #1db954;
+    --accent-hover: #1ed760;
+    --bg: #121212;
+    --sidebar: #000;
+    --card-bg: #1e1e1e;
+    --text-muted: #b3b3b3;
+}
+
+body {
+    background-color: var(--bg);
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding-bottom: 120px;
+    display: flex;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 230px;
+    background: var(--sidebar);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 1px solid #222;
+}
+
+.sidebar h2 {
+    margin-top: 10px;
+    font-size: 18px;
+    color: var(--accent);
+}
+
+.sidebar a {
+    display: block;
+    padding: 8px 0;
+    font-size: 14px;
+    text-decoration: none;
+    color: white;
+}
+.sidebar a:hover {
+    color: var(--accent-hover);
+}
+
+/* MAIN */
+.main {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+}
+
+/* HEADER */
+.playlist-header {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.playlist-cover {
+    width: 180px;
+    height: 180px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #222;
+}
+
+.playlist-info h1 {
+    margin: 0;
+    font-size: 40px;
+}
+
+.playlist-info p {
+    margin: 8px 0;
+    color: var(--text-muted);
+}
+
+.play-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+/* BUTTONS */
+.player-button {
+    width: 48px;
+    height: 48px;
+    background: #292929;
+    color: white;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    transition: 0.15s ease;
+}
+.player-button:hover {
+    background: #343434;
+    transform: scale(1.08);
+}
+#play-all {
+    background: var(--accent);
+    color: black;
+    box-shadow: 0 0 10px rgba(29,185,84,0.6);
+}
+
+/* TABLE */
+.track-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.track-list tr {
+    border-bottom: 1px solid #262626;
+}
+
+.track-list td {
+    padding: 14px 8px;
+}
+
+.track-row:hover {
+    background: #1c1c1c;
+}
+
+.track-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.remove-btn {
+    padding: 6px 10px;
+    background: #b30000;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.remove-btn:hover {
+    background: #cc0000;
+}
+
+select {
+    padding: 6px;
+    background: #222;
+    border-radius: 5px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+/* MOBILE */
+@media (max-width: 850px) {
+    .sidebar {
+        display: none;
+    }
+    .main {
+        margin-left: 0;
+        width: 100%;
+    }
+    .playlist-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+}
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <h2>Your Playlists</h2>
+
+    {% for p in playlists %}
+        <a href="{{ url_for('playlist_view', playlist_id=p.id) }}">🎵 {{ p.name }}</a>
+    {% endfor %}
+
+    <br><br>
+    <a href="/">⬅ Back to Library</a>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <div class="playlist-header">
+
+        {% if tracks|length > 0 %}
+            <img src="{{ url_for('thumbnail', track_id=tracks[0].id) }}"
+                 class="playlist-cover">
+        {% else %}
+            <img src="https://via.placeholder.com/180"
+                 class="playlist-cover">
+        {% endif %}
+
+        <div class="playlist-info">
+            <h1>{{ playlist.name }}</h1>
+            <p>{{ tracks|length }} tracks</p>
+
+            <div class="play-buttons">
+                <button class="player-button" id="play-all" onclick="playPlaylist()">▶</button>
+                <button class="player-button" onclick="toggleShuffle()">🔀</button>
+                <button class="player-button" onclick="toggleRepeat()">🔁</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- TRACK TABLE -->
+    <table class="track-list">
+        {% for t in tracks %}
+        <tr class="track-row">
+            <td>
+                <img class="track-thumb" src="{{ url_for('thumbnail', track_id=t.id) }}">
+            </td>
+
+            <td>
+                <strong>{{ t.name }}</strong><br>
+                <span style="color: var(--text-muted);">{{ t.artist }}</span>
+
+                <!-- ADD TO PLAYLIST -->
+                <select onchange="addToPlaylist(this.value, {{ t.id }})">
+                    <option value="">➕ Add to playlist</option>
+                    {% for p in playlists %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+
+            <td>
+                <button class="remove-btn"
+                onclick="window.location.href='{{ url_for('playlist_remove', playlist_id=playlist.id, track_id=t.id) }}'">
+                    Remove
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+<!-- AUDIO -->
+<audio id="audio"></audio>
+
+<script>
+let audio = document.getElementById("audio");
+
+let playlistTracks = [
+    {% for t in tracks %}
+    {
+        file: "{{ url_for('stream', track_id=t.id) }}",
+        name: "{{ t.name }}",
+        artist: "{{ t.artist }}",
+        thumb: "{{ url_for('thumbnail', track_id=t.id) }}"
+    },
+    {% endfor %}
+];
+
+let currentIndex = 0;
+let shuffle = false;
+let repeatTrack = false;
+
+function playPlaylist() {
+    if (playlistTracks.length === 0) return;
+    currentIndex = 0;
+    play(currentIndex);
+}
+
+function play(i) {
+    let t = playlistTracks[i];
+    audio.src = t.file;
+    audio.play();
+}
+
+function addToPlaylist(playlist_id, track_id) {
+    if (!playlist_id) return;
+    window.location.href = `/playlist/${playlist_id}/add/${track_id}`;
+}
+
+function toggleShuffle() {
+    shuffle = !shuffle;
+    alert("Shuffle: " + (shuffle ? "ON" : "OFF"));
+}
+
+function toggleRepeat() {
+    repeatTrack = !repeatTrack;
+    alert("Repeat: " + (repeatTrack ? "ON" : "OFF"));
+}
+
+audio.addEventListener("ended", () => {
+    if (repeatTrack) {
+        audio.currentTime = 0;
+        audio.play();
+        return;
+    }
+
+    if (shuffle) {
+        currentIndex = Math.floor(Math.random() * playlistTracks.length);
+    } else {
+        currentIndex++;
+        if (currentIndex >= playlistTracks.length) currentIndex = 0;
+    }
+
+    play(currentIndex);
+});
+</script>
+
+</body>
+</html>
