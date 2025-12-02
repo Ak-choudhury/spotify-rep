@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Playlists</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root {
+    --accent: #1db954;
+    --accent-hover: #1ed760;
+    --bg: #121212;
+    --sidebar: #000;
+    --card-bg: #1e1e1e;
+    --text-muted: #b3b3b3;
+}
+
+body {
+    background-color: var(--bg);
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding-bottom: 40px;
+    display: flex;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 230px;
+    background: var(--sidebar);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 1px solid #222;
+}
+
+.sidebar h2 {
+    margin-top: 10px;
+    font-size: 18px;
+    color: var(--accent);
+}
+
+.sidebar a {
+    display: block;
+    padding: 8px 0;
+    font-size: 14px;
+    text-decoration: none;
+    color: white;
+}
+.sidebar a:hover {
+    color: var(--accent-hover);
+}
+
+/* MAIN */
+.main {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+}
+
+.playlist-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.playlist-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.playlist-name {
+    margin: 0;
+    font-size: 18px;
+}
+
+.playlist-meta {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.btn-row {
+    display: flex;
+    gap: 8px;
+}
+
+.open-btn {
+    padding: 6px 12px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    background: #2c2c2c;
+    color: white;
+    font-size: 13px;
+}
+.open-btn:hover {
+    background: #3a3a3a;
+}
+
+.delete-btn {
+    padding: 6px 12px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    background: #b30000;
+    color: white;
+    font-size: 13px;
+}
+.delete-btn:hover {
+    background: #cc0000;
+}
+
+/* MOBILE */
+@media (max-width: 850px) {
+    .sidebar {
+        display: none;
+    }
+    .main {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Your Playlists</h2>
+
+    <a href="{{ url_for('index') }}">⬅ Back to Library</a>
+</div>
+
+<div class="main">
+    <h1>Your Playlists</h1>
+
+    {% if playlists|length == 0 %}
+        <p style="color: var(--text-muted);">You have no playlists yet. Go back to the library and create one.</p>
+    {% endif %}
+
+    {% for p in playlists %}
+    <div class="playlist-card">
+        <div class="playlist-info">
+            <p class="playlist-name">{{ p.name }}</p>
+            <p class="playlist-meta">
+                Created: {{ p.created.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+        </div>
+
+        <div class="btn-row">
+            <button class="open-btn" onclick="window.location.href='{{ url_for('playlist_view', playlist_id=p.id) }}'">
+                Open
+            </button>
+
+            <form method="post" action="{{ url_for('playlist_delete', playlist_id=p.id) }}" onsubmit="return confirm('Delete this playlist?');">
+                <button type="submit" class="delete-btn">Delete</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

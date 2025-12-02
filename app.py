@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import (
+    LoginManager, UserMixin, login_user,
+    login_required, logout_user, current_user
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC
@@ -18,6 +21,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 
 # MODELS
 class User(UserMixin, db.Model):
@@ -70,16 +74,30 @@ def extract_thumbnail(mp3_path, output_folder='thumbnails'):
                 with open(thumb_path, 'wb') as img:
                     img.write(tag.data)
                 return thumb_path
-    except:
+    except Exception:
         return None
 
     return None
+
+
+def attach_playlist_thumbs(playlists):
+    """Attach .thumb_track_id attribute to each playlist (first track's id or None)."""
+    for p in playlists:
+        first_track = (
+            db.session.query(Track)
+            .join(PlaylistTrack, PlaylistTrack.track_id == Track.id)
+            .filter(PlaylistTrack.playlist_id == p.id)
+            .first()
+        )
+        p.thumb_track_id = first_track.id if first_track else None
+    return playlists
 
 
 # ROUTES
 @app.route('/')
 @login_required
 def index():
+    """Initial full-page load – renders base layout with library inside."""
     search = request.args.get("search", "").strip()
     tracks_query = Track.query
 
@@ -94,10 +112,40 @@ def index():
     else:
         tracks = Track.query.order_by(Track.name.asc()).all()
 
-    playlists = Playlist.query.filter_by(user_id=current_user.id).all()
+    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.created.desc()).all()
+    attach_playlist_thumbs(playlists)
 
     return render_template(
-        "index.html",
+        "base.html",
+        tracks=tracks,
+        playlists=playlists,
+        search=search
+    )
+
+
+@app.route('/library')
+@login_required
+def library_partial():
+    """Partial library view for SPA navigation (no <html> wrapper)."""
+    search = request.args.get("search", "").strip()
+    tracks_query = Track.query
+
+    if search:
+        keywords = search.split()
+        for kw in keywords:
+            tracks_query = tracks_query.filter(
+                Track.name.ilike(f"%{kw}%") |
+                Track.artist.ilike(f"%{kw}%")
+            )
+        tracks = tracks_query.all()
+    else:
+        tracks = Track.query.order_by(Track.name.asc()).all()
+
+    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.created.desc()).all()
+    attach_playlist_thumbs(playlists)
+
+    return render_template(
+        "index_partial.html",
         tracks=tracks,
         playlists=playlists,
         search=search
@@ -186,12 +234,13 @@ def playlist_create():
     db.session.add(p)
     db.session.commit()
 
-    return redirect(url_for("playlist_view", playlist_id=p.id))
+    return redirect(url_for("index"))
 
 
 @app.route('/playlist/<int:playlist_id>')
 @login_required
 def playlist_view(playlist_id):
+    """Partial playlist view for SPA (goes into #content)."""
     playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first_or_404()
 
     tracks = (
@@ -201,13 +250,14 @@ def playlist_view(playlist_id):
         .all()
     )
 
-    user_playlists = Playlist.query.filter_by(user_id=current_user.id).all()
+    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.created.desc()).all()
+    attach_playlist_thumbs(playlists)
 
     return render_template(
-        "playlist.html",
+        "playlist_partial.html",
         playlist=playlist,
         tracks=tracks,
-        playlists=user_playlists
+        playlists=playlists
     )
 
 
@@ -222,7 +272,7 @@ def playlist_add(playlist_id, track_id):
         db.session.add(PlaylistTrack(playlist_id=playlist_id, track_id=track_id))
         db.session.commit()
 
-    return redirect(url_for("playlist_view", playlist_id=playlist_id))
+    return redirect(url_for("index"))
 
 
 @app.route('/playlist/<int:playlist_id>/remove/<int:track_id>')
@@ -232,7 +282,17 @@ def playlist_remove(playlist_id, track_id):
     if row:
         db.session.delete(row)
         db.session.commit()
-    return redirect(url_for("playlist_view", playlist_id=playlist_id))
+    return redirect(url_for("index"))
+
+
+@app.route('/playlist/<int:playlist_id>/delete', methods=['GET', 'POST'])
+@login_required
+def playlist_delete(playlist_id):
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first_or_404()
+    PlaylistTrack.query.filter_by(playlist_id=playlist_id).delete()
+    db.session.delete(playlist)
+    db.session.commit()
+    return redirect(url_for('index'))
 
 
 # AUTO IMPORT

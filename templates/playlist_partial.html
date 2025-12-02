@@ -1,0 +1,91 @@
+<div style="padding:18px 22px 22px 22px;">
+
+    <button onclick="loadPage('/library')"
+            style="padding:6px 12px;background:#222;color:white;border:none;border-radius:6px;margin-bottom:16px;cursor:pointer;">
+        ⟵ Back to Library
+    </button>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:20px;">
+        <div>
+            <h2 style="margin:0 0 4px;">{{ playlist.name }}</h2>
+            <p style="margin:0;color:#aaa;">{{ tracks|length }} tracks</p>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;">
+            <button class="btn" style="background:var(--accent);color:black;width:44px;height:44px;"
+                    onclick="playAllPlaylist()">▶</button>
+            <button class="btn btn-toggle" id="btn-shuffle-top" onclick="toggleShuffle()">🔀</button>
+            <button class="btn btn-toggle" id="btn-repeat-top" onclick="toggleRepeat()">🔁</button>
+            <form method="post" action="/playlist/{{ playlist.id }}/delete"
+                  onsubmit="return confirm('Delete entire playlist?');">
+                <button type="submit"
+                        style="padding:8px 12px;background:#b33;color:white;border:none;border-radius:6px;cursor:pointer;">
+                    Remove playlist
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;">
+        {% for t in tracks %}
+        <tr style="border-bottom:1px solid #2a2a2a;">
+            <td style="padding:10px;">
+                <img src="{{ url_for('thumbnail', track_id=t.id) }}"
+                     onclick="playFromPlaylist({{ loop.index0 }});"
+                     style="width:55px;height:55px;border-radius:6px;cursor:pointer;object-fit:cover;">
+            </td>
+            <td style="padding:10px;">
+                <strong>{{ t.name }}</strong><br>
+                <span style="color:#aaa;font-size:12px;">{{ t.artist }}</span>
+            </td>
+            <td style="padding:10px;text-align:right;">
+                <button onclick="window.location.href='/playlist/{{ playlist.id }}/remove/{{ t.id }}';"
+                        style="padding:6px 10px;background:#b33;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;">
+                    Remove
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+<script>
+// current playlist queue
+window.tracks = [
+    {% for t in tracks %}
+    {
+        file: "{{ url_for('stream', track_id=t.id) }}",
+        name: "{{ t.name|e }}",
+        artist: "{{ t.artist|e }}",
+        thumb: "{{ url_for('thumbnail', track_id=t.id) }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+window.currentIndex = 0;
+
+window.playAllPlaylist = function() {
+    if (!window.tracks || window.tracks.length === 0) return;
+    window.currentIndex = 0;
+    const t = window.tracks[0];
+    playTrack(t.file, t.name, t.artist, t.thumb);
+};
+
+window.playFromPlaylist = function(idx) {
+    window.currentIndex = idx;
+    const t = window.tracks[idx];
+    playTrack(t.file, t.name, t.artist, t.thumb);
+};
+
+// keep top shuffle/repeat buttons in sync with global state
+const topShuffle = document.getElementById("btn-shuffle-top");
+const topRepeat  = document.getElementById("btn-repeat-top");
+
+if (typeof shuffleEnabled !== 'undefined' && topShuffle) {
+    topShuffle.classList.toggle('active', shuffleEnabled);
+}
+if (typeof repeatEnabled !== 'undefined' && topRepeat) {
+    topRepeat.classList.toggle('active', repeatEnabled);
+}
+</script>

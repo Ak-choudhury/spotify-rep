@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
-
         :root {
             --accent: #1db954;
             --accent-hover: #1ed760;
@@ -44,7 +43,7 @@
             color: var(--accent);
         }
 
-        .playlist-link {
+        .sidebar-link {
             display: block;
             padding: 8px 0;
             font-size: 14px;
@@ -52,7 +51,7 @@
             text-decoration: none;
         }
 
-        .playlist-link:hover {
+        .sidebar-link:hover {
             color: var(--accent-hover);
         }
 
@@ -170,7 +169,18 @@
             object-fit: cover;
         }
 
-        /* Modern Buttons */
+        .player-info h4 {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .player-info p {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Modern round buttons */
         .player-button {
             width: 42px;
             height: 42px;
@@ -179,11 +189,67 @@
             border-radius: 50%;
             border: none;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 0; /* hide text if any */
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
             transition: 0.15s ease;
+        }
+
+        .player-button::before {
+            content: '';
+            display: block;
+        }
+
+        /* Icons with pure CSS */
+
+        /* Previous (two triangles left) */
+        .btn-prev::before {
+            border-style: solid;
+            border-width: 6px 8px 6px 0;
+            border-color: transparent #ffffff transparent transparent;
+            box-shadow: -6px 0 0 0 #ffffff;
+        }
+
+        /* Next (two triangles right) */
+        .btn-next::before {
+            border-style: solid;
+            border-width: 6px 0 6px 8px;
+            border-color: transparent transparent transparent #ffffff;
+            box-shadow: 6px 0 0 0 #ffffff;
+        }
+
+        /* Play (triangle) */
+        #play-pause.btn-play::before {
+            border-style: solid;
+            border-width: 8px 0 8px 14px;
+            border-color: transparent transparent transparent #000000;
+            margin-left: 4px;
+        }
+
+        /* Pause (two bars) */
+        #play-pause.btn-pause::before {
+            width: 12px;
+            height: 14px;
+            box-shadow: 0 0 0 3px #000000, 10px 0 0 3px #000000;
+        }
+
+        /* Shuffle (simple zigzag bar) */
+        .btn-shuffle::before {
+            width: 18px;
+            height: 2px;
+            background: #ffffff;
+            box-shadow: 0 5px 0 0 #ffffff, 0 -5px 0 0 #ffffff;
+        }
+
+        /* Repeat (simple arrow loop) */
+        .btn-repeat::before {
+            width: 16px;
+            height: 10px;
+            border-radius: 8px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
         }
 
         .player-button:hover {
@@ -193,10 +259,8 @@
 
         #play-pause {
             background: var(--accent);
-            color: black;
             width: 50px;
             height: 50px;
-            font-size: 24px;
             box-shadow: 0 0 10px rgba(29,185,84,0.6);
         }
 
@@ -219,19 +283,39 @@
         #time {
             width: 60px;
             text-align: center;
+            font-size: 13px;
         }
 
         /* Volume control */
         #volume-box {
             display: flex;
             align-items: center;
-            gap: 8px;
-            width: 140px;
+            gap: 6px;
+            width: 130px;
         }
 
         #volume-slider {
             width: 100%;
             cursor: pointer;
+        }
+
+        .volume-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            border: 2px solid #ffffff;
+            border-right: none;
+            position: relative;
+        }
+
+        .volume-icon::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 2px;
+            border-style: solid;
+            border-width: 4px 0 4px 6px;
+            border-color: transparent transparent transparent #ffffff;
         }
 
         @media (max-width: 850px) {
@@ -244,7 +328,6 @@
                 width: 100%;
             }
         }
-
     </style>
 </head>
 <body>
@@ -253,8 +336,10 @@
 <div class="sidebar">
     <h2>Your Playlists</h2>
 
+    <a class="sidebar-link" href="{{ url_for('playlist_list') }}">All Playlists</a>
+
     {% for p in playlists %}
-        <a class="playlist-link" href="{{ url_for('playlist_view', playlist_id=p.id) }}">
+        <a class="sidebar-link" href="{{ url_for('playlist_view', playlist_id=p.id) }}">
             {{ p.name }}
         </a>
     {% endfor %}
@@ -268,66 +353,66 @@
 <!-- MAIN -->
 <div class="main">
 
-<header>
-    <h2>Welcome, {{ current_user.username }}</h2>
+    <header>
+        <h2>Welcome, {{ current_user.username }}</h2>
 
-    <form method="get" class="search-bar">
-        <input type="text" name="search" value="{{ search }}" placeholder="Search music...">
-        <button>Search</button>
-    </form>
+        <form method="get" class="search-bar">
+            <input type="text" name="search" value="{{ search }}" placeholder="Search music...">
+            <button>Search</button>
+        </form>
 
-    <a href="{{ url_for('logout') }}" style="color: white;">Logout</a>
-</header>
+        <a href="{{ url_for('logout') }}" style="color: white;">Logout</a>
+    </header>
 
-<h3>All Tracks</h3>
+    <h3>All Tracks</h3>
 
-<div class="tracks">
-{% for t in tracks %}
-    <div class="track-card"
-         onclick="playTrack('{{ url_for('stream', track_id=t.id) }}',
-                            '{{ t.name }}',
-                            '{{ t.artist }}',
-                            '{{ url_for('thumbnail', track_id=t.id) }}')">
+    <div class="tracks">
+    {% for t in tracks %}
+        <div class="track-card"
+             onclick="playTrack('{{ url_for('stream', track_id=t.id) }}',
+                                '{{ t.name }}',
+                                '{{ t.artist }}',
+                                '{{ url_for('thumbnail', track_id=t.id) }}',
+                                {{ loop.index0 }})">
 
-        <img src="{{ url_for('thumbnail', track_id=t.id) }}" alt="">
-        <h4>{{ t.name }}</h4>
-        <p>{{ t.artist }}</p>
+            <img src="{{ url_for('thumbnail', track_id=t.id) }}" alt="">
+            <h4>{{ t.name }}</h4>
+            <p style="color: var(--text-muted); font-size: 13px;">{{ t.artist }}</p>
 
-        <select onchange="addToPlaylist(this.value, {{ t.id }}); event.stopPropagation();">
-            <option value="">Add to playlist</option>
-            {% for p in playlists %}
-                <option value="{{ p.id }}">{{ p.name }}</option>
-            {% endfor %}
-        </select>
+            <select onchange="addToPlaylist(this.value, {{ t.id }}); event.stopPropagation();">
+                <option value="">Add to playlist</option>
+                {% for p in playlists %}
+                    <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+            </select>
 
+        </div>
+    {% endfor %}
     </div>
-{% endfor %}
-</div>
 
 </div>
 
 <!-- PLAYER -->
 <div id="player">
-    <img id="player-thumb" src="https://via.placeholder.com/60">
-    <div id="player-info">
+    <img id="player-thumb" src="https://via.placeholder.com/60" alt="thumb">
+
+    <div class="player-info">
         <h4 id="player-title">Nothing Playing</h4>
         <p id="player-artist">---</p>
     </div>
 
-    <button class="player-button" onclick="prevTrack()">⟨</button>
-    <button class="player-button" id="play-pause" onclick="togglePlay()">▶</button>
-    <button class="player-button" onclick="nextTrack()">⟩</button>
+    <button class="player-button btn-prev" onclick="prevTrack()"></button>
+    <button class="player-button btn-play" id="play-pause" onclick="togglePlay()"></button>
+    <button class="player-button btn-next" onclick="nextTrack()"></button>
 
-    <button class="player-button" onclick="toggleShuffle()">⇄</button>
-    <button class="player-button" onclick="toggleRepeat()">🔁</button>
+    <button class="player-button btn-shuffle" onclick="toggleShuffle()"></button>
+    <button class="player-button btn-repeat" onclick="toggleRepeat()"></button>
 
-    <!-- VOLUME -->
     <div id="volume-box">
-        <span style="font-size:18px;">🔊</span>
+        <div class="volume-icon"></div>
         <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1">
     </div>
 
-    <!-- Progress -->
     <div id="progress-container" onclick="setProgress(event)">
         <div id="progress"></div>
     </div>
@@ -338,111 +423,35 @@
 <audio id="audio"></audio>
 
 <script>
+    let audio = document.getElementById("audio");
+    let playBtn = document.getElementById("play-pause");
+    let progressBar = document.getElementById("progress");
+    let timeLabel = document.getElementById("time");
+    let volumeSlider = document.getElementById("volume-slider");
 
-let audio = document.getElementById("audio");
-let playBtn = document.getElementById("play-pause");
-let progressBar = document.getElementById("progress");
-let timeLabel = document.getElementById("time");
-let volumeSlider = document.getElementById("volume-slider");
+    audio.volume = 1;
+    volumeSlider.addEventListener("input", () => {
+        audio.volume = volumeSlider.value;
+    });
 
-audio.volume = 1;
+    let currentTrackIndex = 0;
+    let shuffle = false;
+    let repeatTrack = false;
 
-volumeSlider.addEventListener("input", () => {
-    audio.volume = volumeSlider.value;
-});
+    let tracks = [
+        {% for t in tracks %}
+        {
+            file: "{{ url_for('stream', track_id=t.id) }}",
+            name: "{{ t.name }}",
+            artist: "{{ t.artist }}",
+            thumb: "{{ url_for('thumbnail', track_id=t.id) }}"
+        },
+        {% endfor %}
+    ];
 
-let currentTrackIndex = 0;
-let shuffle = false;
-let repeatTrack = false;
-
-let tracks = [
-    {% for t in tracks %}
-    {
-        file: "{{ url_for('stream', track_id=t.id) }}",
-        name: "{{ t.name }}",
-        artist: "{{ t.artist }}",
-        thumb: "{{ url_for('thumbnail', track_id=t.id) }}"
-    },
-    {% endfor %}
-];
-
-function playTrack(file, name, artist, thumb) {
-    audio.src = file;
-    audio.play();
-
-    document.getElementById("player-title").textContent = name;
-    document.getElementById("player-artist").textContent = artist;
-    document.getElementById("player-thumb").src = thumb;
-
-    playBtn.textContent = "⏸";
-}
-
-function addToPlaylist(playlist_id, track_id) {
-    if (playlist_id === "") return;
-    window.location.href = `/playlist/${playlist_id}/add/${track_id}`;
-}
-
-function togglePlay() {
-    if (audio.paused) {
+    function playTrack(file, name, artist, thumb, index) {
+        currentTrackIndex = index;
+        audio.src = file;
         audio.play();
-        playBtn.textContent = "⏸";
-    } else {
-        audio.pause();
-        playBtn.textContent = "▶";
-    }
-}
 
-audio.addEventListener("timeupdate", () => {
-    let percent = (audio.currentTime / audio.duration) * 100;
-    progressBar.style.width = percent + "%";
-
-    let m = Math.floor(audio.currentTime / 60);
-    let s = Math.floor(audio.currentTime % 60).toString().padStart(2,"0");
-    timeLabel.textContent = `${m}:${s}`;
-});
-
-function setProgress(e) {
-    let width = e.target.clientWidth;
-    let clickX = e.offsetX;
-    audio.currentTime = (clickX / width) * audio.duration;
-}
-
-function nextTrack() {
-    if (shuffle) {
-        currentTrackIndex = Math.floor(Math.random() * tracks.length);
-    } else {
-        currentTrackIndex++;
-        if (currentTrackIndex >= tracks.length) currentTrackIndex = 0;
-    }
-    let t = tracks[currentTrackIndex];
-    playTrack(t.file, t.name, t.artist, t.thumb);
-}
-
-function prevTrack() {
-    currentTrackIndex--;
-    if (currentTrackIndex < 0) currentTrackIndex = tracks.length - 1;
-    let t = tracks[currentTrackIndex];
-    playTrack(t.file, t.name, t.artist, t.thumb);
-}
-
-function toggleShuffle() {
-    shuffle = !shuffle;
-}
-
-function toggleRepeat() {
-    repeatTrack = !repeatTrack;
-}
-
-audio.addEventListener("ended", () => {
-    if (repeatTrack) {
-        audio.currentTime = 0;
-        audio.play();
-        return;
-    }
-    nextTrack();
-});
-
-</script>
-
-</body>
-</html>
+        document.getElementById("player-title").textContent
