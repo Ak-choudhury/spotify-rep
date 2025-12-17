@@ -11,4 +11,4 @@ RUN mkdir -p /app/data /app/thumbnails
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "app.py"]
+CMD ["python", "run.py"]
