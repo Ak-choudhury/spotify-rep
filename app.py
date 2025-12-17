@@ -14,7 +14,10 @@ app = Flask(__name__)
 app.secret_key = 'local_secret_key'
 
 # Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///music.db'
+import os
+
+DB_PATH = os.getenv("DB_PATH", "music.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
 db = SQLAlchemy(app)
 
 # Login manager
@@ -58,7 +61,7 @@ def load_user(user_id):
 
 
 # THUMBNAIL EXTRACTION
-def extract_thumbnail(mp3_path, output_folder='thumbnails'):
+def extract_thumbnail(mp3_path, output_folder='/app/thumbnails'):
     os.makedirs(output_folder, exist_ok=True)
     try:
         audio = MP3(mp3_path, ID3=ID3)
@@ -294,12 +297,13 @@ def playlist_delete(playlist_id):
     db.session.commit()
     return redirect(url_for('index'))
 
-
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True) if "/" in DB_PATH else None
 # AUTO IMPORT
-def init_db():
+def scan_music():
     db.create_all()
 
-    music_folder = r"Z:\shared\quran"
+    music_folder = os.getenv("MUSIC_PATH", "/mnt/nas/quran")
+
     if not os.path.exists(music_folder):
         print("NAS folder not found:", music_folder)
         return
@@ -307,7 +311,7 @@ def init_db():
     for file in os.listdir(music_folder):
         if file.lower().endswith(".mp3"):
             file_path = os.path.join(music_folder, file)
-            if Track.query.filter_by(file_path=file_path).first():
+            if Track.query.filter(Track.file_path == file_path).first():
                 continue
 
             name = os.path.splitext(file)[0]
@@ -319,9 +323,9 @@ def init_db():
 
 
 if __name__ == "__main__":
-    os.makedirs("thumbnails", exist_ok=True)
+    os.makedirs("/app/thumbnails", exist_ok=True)
 
     with app.app_context():
-        init_db()
+        scan_music()
 
     app.run(debug=True)

@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: mp3-player
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - /mnt/nas:/music:ro
+      - ./data:/app/data
+      - ./static/thumbnails:/app/thumbnails
+    restart: unless-stopped
