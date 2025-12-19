@@ -221,26 +221,46 @@
 <div id="sidebar">
     <h2>Your Playlists</h2>
 
+    <script>
+        function handleDelete(buttonElement) {
+            const playlistId = buttonElement.getAttribute('data-id');
+            
+            if (confirm("Are you sure?")) {
+                deletePlaylist(playlistId);
+            }
+        }
+    </script>
+
     <div id="playlist-container">
         {% for p in playlists %}
-            <div class="playlist-item">
-                {% if p.thumb_track_id %}
-                    <img class="playlist-thumb"
-                         src="{{ url_for('thumbnail', track_id=p.thumb_track_id) }}"
-                         alt="">
-                {% else %}
-                    <div class="playlist-thumb placeholder"></div>
-                {% endif %}
-                <a href="#" onclick="loadPage('/playlist/{{ p.id }}'); return false;">
+            <div class="playlist-item" id="playlist-{{ p.id }}">
+                <div class="thumb-wrapper">
+                    {% if p.thumb_track_id %}
+                        <img class="playlist-thumb" 
+                             src="{{ url_for('thumbnail', track_id=p.thumb_track_id) }}" 
+                             alt="{{ p.name }} thumbnail">
+                    {% else %}
+                        <div class="playlist-thumb placeholder"></div>
+                    {% endif %}
+                </div>
+                
+                <a class="playlist-link" href="#" onclick="loadPage('/playlist/{{ p.id }}'); return false;">
                     {{ p.name }}
                 </a>
-                <span class="playlist-delete" onclick="deletePlaylist({{ p.id }})">✖</span>
+
+                <button class="playlist-delete" onclick="handleDelete(this)" aria-label="Delete">
+                    ✖
+                </button>
             </div>
+        {% else %}
+            <p class="empty-msg">No playlists created.</p>
         {% endfor %}
     </div>
 
-    <form method="post" action="/playlist/create">
-        <input name="name" placeholder="New playlist">
+    <hr>
+
+    <form class="create-form" onsubmit="handleCreate(event)">
+        <input type="text" name="name" id="playlist-input" placeholder="New playlist" required>
         <button type="submit">+</button>
     </form>
 </div>
