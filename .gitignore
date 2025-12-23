@@ -1,1 +1,7 @@
 /thumbnails/*
+/__pycache__/*
+/app/__pycache__/*
+/app/models/__pycache__/*
+/app/routes/__pycache__/*
+/app/services/__pycache__/*
+/app/utils/__pycache__/*
