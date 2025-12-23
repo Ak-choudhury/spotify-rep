@@ -24,14 +24,25 @@
              onmouseout="this.style.background='#1e1e1e';"
              onclick="playFromLibrary({{ loop.index0 }});">
 
-            <img src="{{ url_for('thumbnail', track_id=t.id) }}"
-                 style="width:100%;height:180px;border-radius:8px;object-fit:cover;display:block;margin-bottom:8px;">
+            <img
+                src="{{ url_for('stream.thumbnail', track_id=t.id) }}"
+                onerror="this.style.display='none';"
+                style="width:100%;height:180px;border-radius:8px;object-fit:cover;display:block;margin-bottom:8px;"
+            >
 
             <h4 style="margin:0 0 4px;font-size:15px;">{{ t.name }}</h4>
             <p style="color:#aaa;margin:0 0 10px;font-size:12px;">{{ t.artist }}</p>
 
-            <select onchange="window.location.href='/playlist/' + this.value + '/add/{{ t.id }}'; event.stopPropagation();"
-                    style="width:100%;padding:6px;background:#222;color:white;border:none;border-radius:6px;font-size:12px;">
+            <select
+                onchange="
+                    if (this.value) {
+                        window.location.href = '{{ url_for('playlist.playlist_add', playlist_id='__PID__', track_id=t.id) }}'
+                            .replace('__PID__', this.value);
+                    }
+                    event.stopPropagation();
+                "
+                style="width:100%;padding:6px;background:#222;color:white;border:none;border-radius:6px;font-size:12px;"
+            >
                 <option value="">Add to playlist…</option>
                 {% for p in playlists %}
                     <option value="{{ p.id }}">{{ p.name }}</option>
@@ -48,10 +59,10 @@
 window.tracks = [
     {% for t in tracks %}
     {
-        file: "{{ url_for('stream', track_id=t.id) }}",
+        file: "{{ url_for('stream.stream', track_id=t.id) }}",
         name: "{{ t.name|e }}",
         artist: "{{ t.artist|e }}",
-        thumb: "{{ url_for('thumbnail', track_id=t.id) }}"
+        thumb: "{{ url_for('stream.thumbnail', track_id=t.id) }}"
     }{% if not loop.last %},{% endif %}
     {% endfor %}
 ];

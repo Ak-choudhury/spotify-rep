@@ -138,7 +138,7 @@ body {
          data-id="{{ p.id }}">
       {% if p.thumb_track_id %}
         <img class="playlist-thumb"
-             src="{{ url_for('thumbnail', track_id=p.thumb_track_id) }}">
+             src="{{ url_for('stream.thumbnail', track_id=p.thumb_track_id) }}">
       {% else %}
         <img class="playlist-thumb"
              src="/static/img/placeholder.png">
