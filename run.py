@@ -14,8 +14,4 @@ with app.app_context():
     MusicService.scan_music_library()
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     app.run(debug=True)
-=======
-    app.run(host="0.0.0.0", port=5000)
->>>>>>> 78eca43a7337f059ac606a6ca98911055cf7c790
