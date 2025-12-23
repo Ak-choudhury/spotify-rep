@@ -36,8 +36,7 @@
             <select
                 onchange="
                     if (this.value) {
-                        window.location.href = '{{ url_for('playlist.playlist_add', playlist_id='__PID__', track_id=t.id) }}'
-                            .replace('__PID__', this.value);
+                        window.location.href = '/playlist/' + this.value + '/add/{{ t.id }}';
                     }
                     event.stopPropagation();
                 "
