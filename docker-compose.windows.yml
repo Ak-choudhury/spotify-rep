@@ -1,0 +1,4 @@
+services:
+  spotify-rep:
+    volumes:
+      - "Z:\\shared\\quran:/music:ro"

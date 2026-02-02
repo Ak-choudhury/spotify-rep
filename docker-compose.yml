@@ -1,15 +1,14 @@
-version: "3.9"
-
 services:
-  app:
+  spotify-rep:
     build: .
     container_name: spotify-rep
     ports:
       - "5000:5000"
-    env_file:
-      - .env
+    environment:
+      - MUSIC_PATH=/music
+      - DB_PATH=/app/data/music.db
+      - THUMBNAIL_PATH=/app/thumbnails
     volumes:
-      - /mnt/nas:/music:ro
       - ./data:/app/data
-      - ./static/thumbnails:/app/thumbnails
+      - ./thumbnails:/app/thumbnails
     restart: unless-stopped
