@@ -30,7 +30,7 @@
         {% for t in tracks %}
         <tr style="border-bottom:1px solid #2a2a2a;">
             <td style="padding:10px;">
-                <img src="{{ url_for('thumbnail', track_id=t.id) }}"
+                <img src="{{ url_for('stream.thumbnail', track_id=t.id) }}">
                      onclick="playFromPlaylist({{ loop.index0 }});"
                      style="width:55px;height:55px;border-radius:6px;cursor:pointer;object-fit:cover;">
             </td>
@@ -55,10 +55,10 @@
 window.tracks = [
     {% for t in tracks %}
     {
-        file: "{{ url_for('stream', track_id=t.id) }}",
+        file: "{{ url_for('stream.stream', track_id=t.id) }}",
         name: "{{ t.name|e }}",
         artist: "{{ t.artist|e }}",
-        thumb: "{{ url_for('thumbnail', track_id=t.id) }}"
+        thumb: "{{ url_for('stream.thumbnail', track_id=t.id) }}"
     }{% if not loop.last %},{% endif %}
     {% endfor %}
 ];
@@ -72,10 +72,10 @@ window.playAllPlaylist = function() {
     playTrack(t.file, t.name, t.artist, t.thumb);
 };
 
-window.playFromPlaylist = function(idx) {
-    window.currentIndex = idx;
-    const t = window.tracks[idx];
-    playTrack(t.file, t.name, t.artist, t.thumb);
+window.playFromPlaylist = function (i) {
+  window.currentIndex = i;
+  const t = window.tracks[i];
+  if (t) playTrack(t.file, t.name, t.artist, t.thumb);
 };
 
 // keep top shuffle/repeat buttons in sync with global state

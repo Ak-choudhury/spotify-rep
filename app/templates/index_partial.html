@@ -62,6 +62,7 @@ window.tracks = [
         name: "{{ t.name|e }}",
         artist: "{{ t.artist|e }}",
         thumb: "{{ url_for('stream.thumbnail', track_id=t.id) }}"
+
     }{% if not loop.last %},{% endif %}
     {% endfor %}
 ];

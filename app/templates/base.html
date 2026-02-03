@@ -225,6 +225,24 @@ function playTrackAt(index) {
 
   document.getElementById("play-btn").textContent = "⏸";
 }
+// Compatibility wrapper used by index_partial.html (and any older templates)
+// which call playTrack(file, name, artist, thumb).
+function playTrack(file, name, artist, thumb) {
+  // If the current page injected a full list of tracks, use it as the queue
+  if (Array.isArray(window.tracks) && window.tracks.length) {
+    state.tracks = window.tracks;
+
+    // Try to find the clicked track inside that list
+    const idx = state.tracks.findIndex(t => t.file === file);
+    state.index = idx >= 0 ? idx : (window.currentIndex ?? 0);
+  } else {
+    // Fallback: play a single track
+    state.tracks = [{ file, name, artist, thumb }];
+    state.index = 0;
+  }
+
+  playTrackAt(state.index);
+}
 
 function togglePlay() {
   if (audio.paused) {
@@ -313,6 +331,45 @@ window.playFromIndex = (tracks, index) => {
   state.tracks = tracks;
   playTrackAt(index);
 };
+
+// Create playlist modal: the HTML form has no action, so we wire it up here.
+const createPlaylistForm = document.getElementById("create-playlist-form");
+if (createPlaylistForm) {
+  createPlaylistForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const input = document.getElementById("playlist-name-input");
+    const name = (input?.value || "").trim();
+    if (!name) {
+      alert("Enter a playlist name");
+      return;
+    }
+
+    const body = new URLSearchParams();
+    body.set("name", name);
+
+    const res = await fetch("/playlist/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+
+    if (res.redirected) {
+      // Server returns redirect; reload so sidebar updates
+      location.href = res.url;
+      return;
+    }
+
+    if (!res.ok) {
+      const txt = await res.text();
+      alert("Failed to create playlist:\n" + txt);
+      return;
+    }
+
+    location.reload();
+  });
+}
+
 </script>
 
 </body>
