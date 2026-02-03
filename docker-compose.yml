@@ -6,9 +6,14 @@ services:
       - "5000:5000"
     environment:
       - MUSIC_PATH=/music
-      - DB_PATH=/app/data/music.db
       - THUMBNAIL_PATH=/app/thumbnails
+      - DATA_PATH=/app/data
+      - FLASK_ENV=production
     volumes:
+      # NAS mount on web-vm -> inside container as /music
+      - /mnt/nas/quran:/music:ro
+
+      # keep these persistent on the VM
       - ./data:/app/data
       - ./thumbnails:/app/thumbnails
     restart: unless-stopped
