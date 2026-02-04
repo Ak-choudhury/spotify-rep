@@ -212,7 +212,7 @@ const nextBtn   = document.getElementById("next");
 const prevBtn   = document.getElementById("prev");
 const progress  = document.getElementById("progress");
 const timeLabel = document.getElementById("time-label");
-
+const progressContainer = document.getElementById("progress-container");
 
 /* ================= CORE FUNCTIONS ================= */
 function playTrackAt(index) {
@@ -298,10 +298,20 @@ audio.onended = () => {
 
 /* ================= SPA NAV ================= */
 function loadPage(url) {
-  fetch(url)
+  fetch(url, { credentials: "same-origin" })
     .then(r => r.text())
     .then(html => {
-      document.getElementById("content").innerHTML = html;
+      const content = document.getElementById("content");
+      content.innerHTML = html;
+
+      // IMPORTANT: execute scripts inside the loaded HTML
+      content.querySelectorAll("script").forEach(old => {
+        const s = document.createElement("script");
+        if (old.src) s.src = old.src;
+        else s.textContent = old.textContent;
+        document.body.appendChild(s);
+        old.remove();
+      });
     });
 }
 

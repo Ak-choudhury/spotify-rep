@@ -11,9 +11,10 @@ services:
       - FLASK_ENV=production
     volumes:
       # NAS mount on web-vm -> inside container as /music
-      - /mnt/nas/quran:/music:ro
+      - /mnt/nas/quran:/data/quran:ro
 
       # keep these persistent on the VM
       - ./data:/app/data
       - ./thumbnails:/app/thumbnails
+      - ./music:/music:ro
     restart: unless-stopped

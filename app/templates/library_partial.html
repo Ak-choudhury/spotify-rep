@@ -1,0 +1,50 @@
+<div class="section-title">Library</div>
+
+{% if tracks|length == 0 %}
+  <div class="muted">No tracks found.</div>
+{% else %}
+  <div class="track-list">
+    {% for t in tracks %}
+      <div class="track-row" onclick="window.playFromLibrary({{ loop.index0 }})">
+        <img class="thumb" src="{{ url_for('static', filename='img/placeholder.png') }}" alt="">
+        <div class="meta">
+          <div class="name">{{ t.name }}</div>
+          <div class="artist">{{ t.artist or "" }}</div>
+        </div>
+
+        <div class="actions">
+          {% if playlists %}
+            <select class="select"
+              onchange="if(this.value){ location.href='/playlist/' + this.value + '/add/{{ t.id }}'; this.value=''; }"
+              onclick="event.stopPropagation();"
+            >
+              <option value="">Add to playlist…</option>
+              {% for p in playlists %}
+                <option value="{{ p.id }}">{{ p.name }}</option>
+              {% endfor %}
+            </select>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    // Build a JS queue that the player can use
+    window.tracks = [
+      {% for t in tracks %}
+      {
+        file: "/stream/{{ t.id }}",
+        name: {{ t.name|tojson }},
+        artist: {{ (t.artist or "")|tojson }},
+        thumb: "/static/img/placeholder.png"
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    window.playFromLibrary = (idx) => {
+      if (!window.tracks?.[idx]) return;
+      window.playFromIndex(window.tracks, idx);
+    };
+  </script>
+{% endif %}
