@@ -349,42 +349,45 @@ window.playFromIndex = (tracks, index) => {
 };
 
 // Create playlist modal: the HTML form has no action, so we wire it up here.
-const createPlaylistForm = document.getElementById("create-playlist-form");
-if (createPlaylistForm) {
-  createPlaylistForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+// Works even when the page content is swapped by SPA navigation
+document.addEventListener("submit", async (e) => {
+  const form = e.target;
+  if (!form || form.id !== "create-playlist-form") return;
 
-    const input = document.getElementById("playlist-name-input");
-    const name = (input?.value || "").trim();
-    if (!name) {
-      alert("Enter a playlist name");
-      return;
-    }
+  e.preventDefault();
 
-    const body = new URLSearchParams();
-    body.set("name", name);
+  // Read the input from THIS form (not from the whole document)
+  const input =
+    form.querySelector('input[name="name"]') ||
+    form.querySelector("#playlist-name-input") ||
+    form.querySelector("input");
 
-    const res = await fetch("/playlist/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body
-    });
+  const name = (input?.value || "").trim();
 
-    if (res.redirected) {
-      // Server returns redirect; reload so sidebar updates
-      location.href = res.url;
-      return;
-    }
+  if (!name) {
+    alert("Enter a playlist name");
+    return;
+  }
 
-    if (!res.ok) {
-      const txt = await res.text();
-      alert("Failed to create playlist:\n" + txt);
-      return;
-    }
+  const body = new URLSearchParams();
+  body.set("name", name);
 
-    location.reload();
+  const res = await fetch("/playlist/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
   });
-}
+
+  // Most Flask routes redirect after POST – just follow it
+  if (res.redirected) {
+    window.location.href = res.url;
+    return;
+  }
+
+  // Fallback: reload so sidebar updates
+  window.location.reload();
+});
+
 
 </script>
 
