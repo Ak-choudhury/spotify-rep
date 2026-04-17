@@ -11,7 +11,9 @@
   --bg:#121212;
   --sidebar:#000;
   --muted:#b3b3b3;
+  --sidebar-width:240px;
 }
+*, *::before, *::after { box-sizing: border-box; }
 body {
   margin:0;
   background:var(--bg);
@@ -20,17 +22,50 @@ body {
   display:flex;
 }
 
-/* SIDEBAR */
+/* ── SIDEBAR ── */
 #sidebar {
-  width:240px;
+  width:var(--sidebar-width);
   background:var(--sidebar);
   height:100vh;
   position:fixed;
+  top:0; left:0;
   padding:16px;
   border-right:1px solid #222;
   overflow-y:auto;
+  transition: transform 0.3s ease;
+  z-index:200;
 }
-#sidebar h2 { color:var(--accent); font-size:18px; }
+#sidebar h2 { color:var(--accent); font-size:18px; margin-top:36px; }
+
+#sidebar-toggle {
+  position:fixed;
+  top:12px;
+  left:12px;
+  z-index:300;
+  background:#1db954;
+  border:none;
+  color:black;
+  font-size:18px;
+  width:36px;
+  height:36px;
+  border-radius:8px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+}
+
+/* collapsed state */
+body.sidebar-hidden #sidebar {
+  transform: translateX(-100%);
+}
+body.sidebar-hidden #content,
+body.sidebar-hidden #player {
+  margin-left:0;
+  width:100%;
+  left:0;
+}
 
 .playlist-item {
   display:flex;
@@ -39,8 +74,7 @@ body {
   padding:6px 0;
 }
 .playlist-thumb {
-  width:32px;
-  height:32px;
+  width:32px; height:32px;
   border-radius:4px;
   background:#222;
   object-fit:cover;
@@ -59,74 +93,147 @@ body {
   border:none;
 }
 
-/* MAIN */
+/* ── MAIN ── */
 #content {
-  margin-left:240px;
-  width:calc(100% - 240px);
-  padding-bottom:120px;
+  margin-left:var(--sidebar-width);
+  width:calc(100% - var(--sidebar-width));
+  padding-bottom:130px;
+  transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-/* PLAYER */
+/* ── PLAYER ── */
 #player {
   position:fixed;
   bottom:0;
-  left:240px;
-  width:calc(100% - 240px);
+  left:var(--sidebar-width);
+  width:calc(100% - var(--sidebar-width));
   background:#181818;
-  padding:12px;
+  padding:10px 14px;
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:10px;
   border-top:1px solid #333;
+  flex-wrap:wrap;
+  transition: left 0.3s ease, width 0.3s ease;
+  z-index:100;
 }
 #player-thumb {
-  width:56px;
-  height:56px;
+  width:52px; height:52px;
   border-radius:6px;
   object-fit:cover;
+  flex-shrink:0;
+}
+#player-info {
+  min-width:0;
+  flex:1;
+  overflow:hidden;
+}
+#p-title {
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:14px;
+  font-weight:bold;
+}
+#p-artist {
+  font-size:11px;
+  color:var(--muted);
+}
+#player-controls {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
 }
 .btn {
-  width:40px;
-  height:40px;
+  width:38px; height:38px;
   border-radius:50%;
   background:#2c2c2c;
   border:none;
   color:white;
   cursor:pointer;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 #play-btn {
   background:var(--accent);
   color:black;
+  width:42px; height:42px;
+}
+.btn-toggle.active {
+  color:var(--accent);
+  background:#1a3d2b;
+}
+
+/* ── PROGRESS / SEEK ── */
+#player-progress-row {
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  order:10; /* always last row */
 }
 #progress-container {
-  flex:2;
+  flex:1;
   height:6px;
   background:#444;
   border-radius:5px;
   cursor:pointer;
+  position:relative;
 }
 #progress {
   height:6px;
   background:var(--accent);
   width:0%;
+  border-radius:5px;
+  pointer-events:none;
 }
-#time-label {
-  font-size:12px;
-  width:50px;
-  text-align:right;
+#time-label { font-size:11px; color:var(--muted); white-space:nowrap; }
+#duration-label { font-size:11px; color:var(--muted); white-space:nowrap; }
+
+/* volume */
+#volume {
+  width:80px;
+  accent-color:var(--accent);
+  flex-shrink:0;
 }
-@media (max-width:900px) {
-  #sidebar { display:none; }
-  #content, #player {
-    margin-left:0;
-    width:100%;
-    left:0;
+
+/* ── MOBILE ── */
+@media (max-width:700px) {
+  :root { --sidebar-width: 0px; }
+
+  #sidebar {
+    width:240px;
+    transform: translateX(-100%);
   }
+  body.sidebar-visible #sidebar {
+    transform: translateX(0);
+  }
+
+  #content, #player {
+    margin-left:0 !important;
+    width:100% !important;
+    left:0 !important;
+  }
+
+  #player {
+    padding:8px 10px;
+    gap:6px;
+  }
+  #player-thumb { width:42px; height:42px; }
+  #volume { width:60px; }
+  .btn { width:34px; height:34px; font-size:13px; }
+  #play-btn { width:38px; height:38px; }
 }
 </style>
 </head>
 
 <body>
+
+<!-- SIDEBAR TOGGLE BUTTON (always visible) -->
+<button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
@@ -134,25 +241,14 @@ body {
 
   <div id="playlist-container">
     {% for p in playlists %}
-    <div class="playlist-item"
-         data-id="{{ p.id }}">
+    <div class="playlist-item" data-id="{{ p.id }}">
       {% if p.thumb_track_id %}
-        <img class="playlist-thumb"
-             src="{{ url_for('stream.thumbnail', track_id=p.thumb_track_id) }}">
+        <img class="playlist-thumb" src="{{ url_for('stream.thumbnail', track_id=p.thumb_track_id) }}">
       {% else %}
-        <img class="playlist-thumb"
-             src="/static/img/placeholder.png">
+        <img class="playlist-thumb" src="/static/img/placeholder.png">
       {% endif %}
-
-      <div class="playlist-name"
-           data-action="open-playlist">
-        {{ p.name }}
-      </div>
-
-      <button class="playlist-delete"
-              data-action="delete-playlist">
-        ✖
-      </button>
+      <div class="playlist-name" data-action="open-playlist">{{ p.name }}</div>
+      <button class="playlist-delete" data-action="delete-playlist">✖</button>
     </div>
     {% endfor %}
   </div>
@@ -160,9 +256,7 @@ body {
   <hr>
 
   <form id="create-playlist-form">
-    <input id="playlist-name"
-           required
-           placeholder="New playlist">
+    <input id="playlist-name" required placeholder="New playlist">
     <button type="submit">+</button>
   </form>
 </div>
@@ -174,127 +268,243 @@ body {
 
 <!-- PLAYER -->
 <div id="player">
-  <img id="player-thumb"
-       src="/static/img/placeholder.png">
+  <img id="player-thumb" src="/static/img/placeholder.png">
 
-  <div>
+  <div id="player-info">
     <div id="p-title">Nothing Playing</div>
-    <div id="p-artist" style="font-size:12px;color:var(--muted)">—</div>
+    <div id="p-artist">—</div>
   </div>
 
-  <button class="btn" id="prev">⏮</button>
-  <button class="btn" id="play-btn">▶</button>
-  <button class="btn" id="next">⏭</button>
-
-  <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
-
-  <div id="progress-container">
-    <div id="progress"></div>
+  <div id="player-controls">
+    <button class="btn" id="prev">⏮</button>
+    <button class="btn" id="play-btn">▶</button>
+    <button class="btn" id="next">⏭</button>
+    <button class="btn btn-toggle" id="btn-shuffle" onclick="toggleShuffle()">🔀</button>
+    <button class="btn btn-toggle" id="btn-repeat"  onclick="toggleRepeat()">🔁</button>
+    <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
   </div>
 
-  <span id="time-label">0:00</span>
+  <div id="player-progress-row">
+    <span id="time-label">0:00</span>
+    <div id="progress-container">
+      <div id="progress"></div>
+    </div>
+    <span id="duration-label">0:00</span>
+  </div>
 </div>
 
 <audio id="audio"></audio>
 
 <script>
+/* ================= SIDEBAR TOGGLE ================= */
+function toggleSidebar() {
+  const isMobile = window.innerWidth <= 700;
+  if (isMobile) {
+    document.body.classList.toggle('sidebar-visible');
+  } else {
+    document.body.classList.toggle('sidebar-hidden');
+  }
+}
+
 /* ================= PLAYER STATE ================= */
 const state = {
   tracks: [],
   index: 0,
   shuffle: false,
+  shuffleOrder: [],
+  shufflePos: 0,
   repeat: false
 };
 
-const audio = document.getElementById("audio");
-const playBtn   = document.getElementById("play-btn");
-const nextBtn   = document.getElementById("next");
-const prevBtn   = document.getElementById("prev");
-const progress  = document.getElementById("progress");
-const timeLabel = document.getElementById("time-label");
-const progressContainer = document.getElementById("progress-container");
+const audio       = document.getElementById("audio");
+const playBtn     = document.getElementById("play-btn");
+const nextBtn     = document.getElementById("next");
+const prevBtn     = document.getElementById("prev");
+const progress    = document.getElementById("progress");
+const timeLabel   = document.getElementById("time-label");
+const durLabel    = document.getElementById("duration-label");
+const progressCon = document.getElementById("progress-container");
+const btnShuffle  = document.getElementById("btn-shuffle");
+const btnRepeat   = document.getElementById("btn-repeat");
+
+/* ================= SHUFFLE HELPERS ================= */
+function buildShuffleOrder(len, currentIdx) {
+  const arr = [...Array(len).keys()].filter(i => i !== currentIdx);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  arr.unshift(currentIdx); // current track always first
+  return arr;
+}
 
 /* ================= CORE FUNCTIONS ================= */
 function playTrackAt(index) {
   if (!state.tracks[index]) return;
-
   state.index = index;
   const t = state.tracks[index];
 
   audio.src = t.file;
   audio.play();
 
-  document.getElementById("p-title").textContent = t.name;
+  document.getElementById("p-title").textContent  = t.name;
   document.getElementById("p-artist").textContent = t.artist || "";
-  document.getElementById("player-thumb").src =
-    t.thumb || "/static/img/placeholder.png";
+  document.getElementById("player-thumb").src     = t.thumb || "/static/img/placeholder.png";
+  playBtn.textContent = "⏸";
 
-  document.getElementById("play-btn").textContent = "⏸";
+  updateMediaSession(t);
 }
-// Compatibility wrapper used by index_partial.html (and any older templates)
-// which call playTrack(file, name, artist, thumb).
+
 function playTrack(file, name, artist, thumb) {
-  // If the current page injected a full list of tracks, use it as the queue
   if (Array.isArray(window.tracks) && window.tracks.length) {
     state.tracks = window.tracks;
-
-    // Try to find the clicked track inside that list
     const idx = state.tracks.findIndex(t => t.file === file);
     state.index = idx >= 0 ? idx : (window.currentIndex ?? 0);
   } else {
-    // Fallback: play a single track
     state.tracks = [{ file, name, artist, thumb }];
     state.index = 0;
   }
-
+  if (state.shuffle) {
+    state.shuffleOrder = buildShuffleOrder(state.tracks.length, state.index);
+    state.shufflePos = 0;
+  }
   playTrackAt(state.index);
 }
 
 function togglePlay() {
-  if (audio.paused) {
-    audio.play();
-    playBtn.textContent = "⏸";
-  } else {
-    audio.pause();
-    playBtn.textContent = "▶";
-  }
+  if (audio.paused) { audio.play();  playBtn.textContent = "⏸"; }
+  else              { audio.pause(); playBtn.textContent = "▶"; }
 }
 
 function nextTrack() {
   if (!state.tracks.length) return;
-  state.index = (state.index + 1) % state.tracks.length;
-  playTrackAt(state.index);
+  if (state.shuffle) {
+    state.shufflePos = (state.shufflePos + 1) % state.shuffleOrder.length;
+    playTrackAt(state.shuffleOrder[state.shufflePos]);
+  } else {
+    playTrackAt((state.index + 1) % state.tracks.length);
+  }
 }
 
 function prevTrack() {
   if (!state.tracks.length) return;
-  state.index =
-    (state.index - 1 + state.tracks.length) % state.tracks.length;
-  playTrackAt(state.index);
+  if (audio.currentTime > 3) {
+    // restart current track if more than 3s in
+    audio.currentTime = 0;
+    return;
+  }
+  if (state.shuffle) {
+    state.shufflePos = (state.shufflePos - 1 + state.shuffleOrder.length) % state.shuffleOrder.length;
+    playTrackAt(state.shuffleOrder[state.shufflePos]);
+  } else {
+    playTrackAt((state.index - 1 + state.tracks.length) % state.tracks.length);
+  }
+}
+
+function toggleShuffle() {
+  state.shuffle = !state.shuffle;
+  btnShuffle.classList.toggle('active', state.shuffle);
+  // sync playlist page buttons
+  const top = document.getElementById("btn-shuffle-top");
+  if (top) top.classList.toggle('active', state.shuffle);
+  if (state.shuffle && state.tracks.length) {
+    state.shuffleOrder = buildShuffleOrder(state.tracks.length, state.index);
+    state.shufflePos = 0;
+  }
+}
+
+function toggleRepeat() {
+  state.repeat = !state.repeat;
+  btnRepeat.classList.toggle('active', state.repeat);
+  const top = document.getElementById("btn-repeat-top");
+  if (top) top.classList.toggle('active', state.repeat);
+}
+
+/* ================= MEDIA SESSION (lock screen) ================= */
+function updateMediaSession(t) {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title:  t.name   || 'Unknown',
+    artist: t.artist || 'Unknown',
+    artwork: t.thumb ? [{ src: t.thumb, sizes: '512x512', type: 'image/jpeg' }] : []
+  });
+  navigator.mediaSession.setActionHandler('play',         () => { audio.play();  playBtn.textContent = "⏸"; });
+  navigator.mediaSession.setActionHandler('pause',        () => { audio.pause(); playBtn.textContent = "▶"; });
+  navigator.mediaSession.setActionHandler('nexttrack',    () => nextTrack());
+  navigator.mediaSession.setActionHandler('previoustrack',() => prevTrack());
+  navigator.mediaSession.setActionHandler('seekto', e => {
+    if (e.seekTime !== undefined) audio.currentTime = e.seekTime;
+  });
 }
 
 /* ================= EVENTS ================= */
-document.getElementById("play-btn").onclick = togglePlay;
-document.getElementById("next").onclick = nextTrack;
-document.getElementById("prev").onclick = prevTrack;
+playBtn.onclick  = togglePlay;
+nextBtn.onclick  = nextTrack;
+prevBtn.onclick  = prevTrack;
 
-document.getElementById("volume").oninput =
-  e => audio.volume = e.target.value;
+document.getElementById("volume").oninput = e => audio.volume = e.target.value;
+
+// Seek on click
+progressCon.addEventListener("click", e => {
+  if (!audio.duration) return;
+  const rect = progressCon.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = ratio * audio.duration;
+});
+
+// Seek on drag
+let seeking = false;
+progressCon.addEventListener("mousedown",  () => seeking = true);
+document.addEventListener("mouseup",       () => seeking = false);
+document.addEventListener("mousemove", e => {
+  if (!seeking || !audio.duration) return;
+  const rect = progressCon.getBoundingClientRect();
+  const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+  audio.currentTime = ratio * audio.duration;
+});
+
+// Touch seek
+progressCon.addEventListener("touchstart", e => { seeking = true; e.preventDefault(); }, { passive: false });
+document.addEventListener("touchend",  () => seeking = false);
+document.addEventListener("touchmove", e => {
+  if (!seeking || !audio.duration) return;
+  const rect = progressCon.getBoundingClientRect();
+  const ratio = Math.min(Math.max((e.touches[0].clientX - rect.left) / rect.width, 0), 1);
+  audio.currentTime = ratio * audio.duration;
+});
+
+function fmtTime(s) {
+  if (isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
 
 audio.ontimeupdate = () => {
   if (!audio.duration) return;
-  progress.style.width =
-    (audio.currentTime / audio.duration) * 100 + "%";
+  progress.style.width = (audio.currentTime / audio.duration) * 100 + '%';
+  timeLabel.textContent = fmtTime(audio.currentTime);
+  if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: audio.duration,
+        playbackRate: audio.playbackRate,
+        position: audio.currentTime
+      });
+    } catch(e) {}
+  }
+};
 
-  const m = Math.floor(audio.currentTime / 60);
-  const s = Math.floor(audio.currentTime % 60)
-            .toString().padStart(2,"0");
-  timeLabel.textContent = `${m}:${s}`;
+audio.onloadedmetadata = () => {
+  durLabel.textContent = fmtTime(audio.duration);
 };
 
 audio.onended = () => {
   state.repeat ? playTrackAt(state.index) : nextTrack();
 };
+
+audio.onplay  = () => playBtn.textContent = "⏸";
+audio.onpause = () => playBtn.textContent = "▶";
 
 /* ================= SPA NAV ================= */
 function loadPage(url) {
@@ -303,8 +513,6 @@ function loadPage(url) {
     .then(html => {
       const content = document.getElementById("content");
       content.innerHTML = html;
-
-      // IMPORTANT: execute scripts inside the loaded HTML
       content.querySelectorAll("script").forEach(old => {
         const s = document.createElement("script");
         if (old.src) s.src = old.src;
@@ -318,77 +526,59 @@ function loadPage(url) {
 /* ================= SIDEBAR EVENTS ================= */
 document.getElementById("playlist-container")
   .addEventListener("click", e => {
-
-  const item = e.target.closest(".playlist-item");
-  if (!item) return;
-
-  const id = item.dataset.id;
-
-  if (e.target.dataset.action === "open-playlist") {
-    loadPage(`/playlist/${id}`);
-  }
-
-  if (e.target.dataset.action === "delete-playlist") {
-    if (confirm("Delete playlist?")) {
-      location.href = `/playlist/${id}/delete`;
+    const item = e.target.closest(".playlist-item");
+    if (!item) return;
+    const id = item.dataset.id;
+    if (e.target.dataset.action === "open-playlist")  loadPage(`/playlist/${id}`);
+    if (e.target.dataset.action === "delete-playlist") {
+      if (confirm("Delete playlist?")) location.href = `/playlist/${id}/delete`;
     }
-  }
-});
+  });
 
 /* ================= PLAYLIST API ================= */
 window.playAll = tracks => {
   if (!tracks?.length) return;
   state.tracks = tracks;
-  playTrackAt(0);
+  if (state.shuffle) {
+    state.shuffleOrder = buildShuffleOrder(tracks.length, 0);
+    state.shufflePos = 0;
+    playTrackAt(state.shuffleOrder[0]);
+  } else {
+    playTrackAt(0);
+  }
 };
 
 window.playFromIndex = (tracks, index) => {
   if (!tracks?.[index]) return;
   state.tracks = tracks;
+  if (state.shuffle) {
+    state.shuffleOrder = buildShuffleOrder(tracks.length, index);
+    state.shufflePos = 0;
+  }
   playTrackAt(index);
 };
 
-// Create playlist modal: the HTML form has no action, so we wire it up here.
-// Works even when the page content is swapped by SPA navigation
+/* ================= CREATE PLAYLIST ================= */
 document.addEventListener("submit", async (e) => {
   const form = e.target;
   if (!form || form.id !== "create-playlist-form") return;
-
   e.preventDefault();
-
-  // Read the input from THIS form (not from the whole document)
   const input =
     form.querySelector('input[name="name"]') ||
     form.querySelector("#playlist-name-input") ||
     form.querySelector("input");
-
   const name = (input?.value || "").trim();
-
-  if (!name) {
-    alert("Enter a playlist name");
-    return;
-  }
-
+  if (!name) { alert("Enter a playlist name"); return; }
   const body = new URLSearchParams();
   body.set("name", name);
-
   const res = await fetch("/playlist/create", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body
   });
-
-  // Most Flask routes redirect after POST – just follow it
-  if (res.redirected) {
-    window.location.href = res.url;
-    return;
-  }
-
-  // Fallback: reload so sidebar updates
+  if (res.redirected) { window.location.href = res.url; return; }
   window.location.reload();
 });
-
-
 </script>
 
 </body>
