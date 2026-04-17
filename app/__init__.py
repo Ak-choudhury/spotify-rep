@@ -2,13 +2,14 @@ from flask import Flask
 from app.config import Config
 from app.extensions import db, login_manager
 from app.models import User
-
 from app.routes import (
     auth_bp,
     library_bp,
     playlist_bp,
     stream_bp
 )
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 
 def create_app() -> Flask:
     app = Flask(__name__)
@@ -27,5 +28,18 @@ def create_app() -> Flask:
     app.register_blueprint(library_bp)
     app.register_blueprint(playlist_bp)
     app.register_blueprint(stream_bp)
+
+    # ── Auto-sync every 5 minutes ──────────────────────────────
+    from app.services.music_service import MusicService
+
+    def scheduled_scan():
+        with app.app_context():
+            MusicService.scan_music_library()
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=scheduled_scan, trigger="interval", minutes=5)
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown())
+    # ───────────────────────────────────────────────────────────
 
     return app
